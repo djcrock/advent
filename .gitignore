@@ -1,0 +1,5 @@
+*.hi
+*.o
+# Ignore complied solvers and solutions
+*.solver
+*.solution
