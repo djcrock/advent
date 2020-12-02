@@ -11,17 +11,17 @@ solve: ${SOLUTIONS}
 		sort -g | \
 		xargs head -v
 
+# Make an empty input file, if one doesn't already exist
+%.input:
+	@touch $@
+
 # GHC runs in --make mode and handles recompilation dependencies.
 # This makefile is just here for convenience.
 %.solver: %.hs
-	@ghc --make $< -outputdir ${ODIR} -o $@
+	@ghc --make $< -outputdir "${ODIR}/$(basename $<)" -o $@
 
-%.solution: %.solver
-#Optional input file
-	@if [ -f "$(basename $<).input" ]; \
-		then cat "$(basename $<).input" | "./$<" > $@; \
-		else "./$<" > $@; \
-		fi
+%.solution: %.solver %.input
+	@cat "$(basename $<).input" | "./$<" > $@;
 
 .PHONY: clean
 clean:
