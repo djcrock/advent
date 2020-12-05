@@ -13,15 +13,15 @@ solve: ${SOLUTIONS}
 
 # Make an empty input file, if one doesn't already exist
 %.input:
-	@touch $@
+	@touch "$@"
 
 # GHC runs in --make mode and handles recompilation dependencies.
 # This makefile is just here for convenience.
 %.solver: %.hs
-	@ghc --make $< -outputdir "${ODIR}/$(basename $<)" -o $@
+	@ghc --make $< -outputdir "${ODIR}/$@" -o "$@"
 
 %.solution: %.solver %.input
-	@cat "$(basename $<).input" | "./$<" > $@;
+	@"./$<" < "$*.input" > "$@"
 
 .PHONY: clean
 clean:
