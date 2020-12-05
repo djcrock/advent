@@ -1,32 +1,22 @@
-import Data.Bits
 import Data.List
 
 type BoardingPass = [Bool]
 type Seat = Int
 
+-- 'B' and 'R' are ones, 'F' and 'L' are zeroes.
 parse :: String -> [BoardingPass]
 parse = map (map (`elem` "BR")) . lines
 
-binaryToInt :: [Bool] -> Int
-binaryToInt = foldl (\acc bit -> shift acc 1 + fromEnum bit) 0
+-- Boarding passes are just a binary encoding of unsigned integers.
+binaryToInt :: BoardingPass -> Seat
+binaryToInt = foldl (\int bit -> int * 2 + fromEnum bit) 0
 
-getRow :: BoardingPass -> Int
-getRow = binaryToInt . take 7
-
-getColumn :: BoardingPass -> Int
-getColumn = binaryToInt . drop 7
-
-toSeat :: BoardingPass -> Seat
-toSeat bp = getRow bp * 8 + getColumn bp
-
+-- Find the first valid seat ID not present in the input.
+-- Always returns an ID greater than the minimum input ID.
 findEmptySeat :: [Seat] -> Seat
-findEmptySeat seats = findGap (sort seats)
-    where findGap (x:y:ys) =
-            if (y-x) == 2
-            then x + 1
-            else findGap (y:ys)
+findEmptySeat seats = head $ [(minimum seats)..] \\ seats
 
-partOne = maximum . map toSeat
-partTwo = findEmptySeat . map toSeat
+partOne = maximum . map binaryToInt
+partTwo = findEmptySeat . map binaryToInt
 
 main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . parse
