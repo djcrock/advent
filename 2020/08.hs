@@ -16,9 +16,9 @@ import Text.Parsec
 type Parser a = Parsec String () a
 data Instruction = Acc Int | Jmp Int | Nop Int deriving (Eq, Show)
 type Program = [Instruction]
-type ProgramCounter = Int
 type Accumulator = Int
-type Visited = [ProgramCounter]
+type ProgramCounter = Int
+type Trace = [ProgramCounter]
 
 argument :: Parser Int
 argument = do
@@ -42,19 +42,19 @@ inputParser = sepEndBy instruction newline
 must (Right x) = x
 must (Left y)  = error $ show y
 
-isLoop :: State Visited Bool
+isLoop :: State Trace Bool
 isLoop = do
-    vis <- get
-    return (elem (head vis) (tail vis))
+    trace <- get
+    return (elem (head trace) (tail trace))
 
-currentCounter :: State Visited ProgramCounter
+currentCounter :: State Trace ProgramCounter
 currentCounter = head <$> get
 
-pushProgramCounter :: ProgramCounter -> State Visited ()
+pushProgramCounter :: ProgramCounter -> State Trace ()
 pushProgramCounter p = modify (p:)
 
 -- Run the given program until it loops or halts
-runProgram :: Program -> State Visited Accumulator
+runProgram :: Program -> State Trace Accumulator
 runProgram prog = do
     loop <- isLoop
     counter <- currentCounter
@@ -90,6 +90,6 @@ generateFixes (x:xs) = if flip == x
 partOne prog = evalState (runProgram prog) [0]
 partTwo prog = (fst . head) (filter didHalt outputs)
     where outputs = runState <$> (runProgram <$> generateFixes prog) <*> pure [0]
-          didHalt (_,visited) = head visited == length prog
+          didHalt (_,trace) = head trace == length prog
 
 main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . must . parse inputParser ""
