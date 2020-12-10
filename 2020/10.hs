@@ -1,4 +1,4 @@
-import Data.List (sort)
+import Data.List (group, sort)
 
 type Adapter = Int
 type Step = Int
@@ -30,9 +30,7 @@ countElem x ys = length (filter (== x) ys)
 
 -- e.g. [1,1,1,3,3,1,3,1,1,1,1] -> [[1,1,1],[1],[1,1,1,1]]
 splitOnThrees :: [Step] -> [[Step]]
-splitOnThrees [] = []
-splitOnThrees xs = takeWhile (/= 3) xs
-                   : splitOnThrees (dropWhile (== 3) . dropWhile (/= 3) $ xs)
+splitOnThrees = filter (elem 1) . group
 
 -- Any adapter providing a step of 3 cannot be removed
 -- Any adapter immediately preceding one that provides 3 cannot be removed
