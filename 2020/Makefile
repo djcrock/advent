@@ -9,7 +9,7 @@ solve: ${SOLUTIONS}
 	@echo $? | \
 		tr ' ' '\n' | \
 		sort -g | \
-		xargs head -v
+		xargs head -v -n -0
 
 # Make an empty input file, if one doesn't already exist
 %.input:
