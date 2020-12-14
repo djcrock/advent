@@ -1,42 +1,19 @@
-import Control.Applicative ( (<|>) )
 import Data.Bits
-import qualified Data.Map as Map
+import qualified Data.IntMap as Map
 import Text.Parsec
-    ( digit,
-      newline,
-      string,
-      many1,
-      oneOf,
-      sepEndBy,
-      parse,
-      try,
-      Parsec )
 
-type Parser a = Parsec String () a
 type Address = Int
 type MaskTemplate = String
 type Mask = (Int,Int)
 data Instruction = Store Address Int | SetMask MaskTemplate deriving (Eq, Show)
 type Program = [Instruction]
-type Memory = Map.Map Address Int
+type Memory = Map.IntMap Int
 
-nat :: Parser Int
-nat = many1 digit >>= (return . read)
-
-store :: Parser Instruction
-store = try $ do
-    string "mem["
-    addr <- nat
-    string "] = "
-    Store addr <$> nat
-
-setMask :: Parser Instruction
-setMask = try $ do
-    string "mask = "
-    SetMask <$> many1 (oneOf "X01")
-
-inputParser :: Parser Program
-inputParser = sepEndBy (store <|> setMask) newline
+inputParser :: Parsec String () Program
+inputParser = sepEndBy (try store <|> setMask) newline
+    where nat     = read    <$> many1 digit
+          store   = Store   <$> (string "mem[" *> nat <* string "] = ") <*> nat
+          setMask = SetMask <$> (string "mask = " *> many1 (oneOf "X01"))
 
 must (Right x) = x
 must (Left y)  = error $ show y
@@ -72,7 +49,7 @@ expandFloatBits ('X':bits) = map ('0':) (expandFloatBits bits)
 genMemMasks :: MaskTemplate -> [Mask]
 genMemMasks = map toMask . expandFloatBits
 
-multiInsert :: Ord a => [a] -> b -> Map.Map a b -> Map.Map a b
+multiInsert :: [Int] -> a -> Map.IntMap a -> Map.IntMap a
 multiInsert []         _   m = m
 multiInsert (key:keys) val m = multiInsert keys val (Map.insert key val m)
 
