@@ -18,7 +18,7 @@ solve: ${SOLUTIONS}
 # GHC runs in --make mode and handles recompilation dependencies.
 # This makefile is just here for convenience.
 %.solver: %.hs
-	@ghc --make $< -outputdir "${ODIR}/$@" -o "$@"
+	@ghc -O2 --make $< -outputdir "${ODIR}/$@" -o "$@"
 
 %.solution: %.solver %.input
 	@"./$<" < "$*.input" > "$@"
