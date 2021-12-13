@@ -9,8 +9,8 @@ type Sequence = [Digit]
 
 segments = ['a'..'g']
 
-inputParser :: Parser [(Sequence, Sequence)]
-inputParser = sepEndBy lineP newline
+inputP :: Parser [(Sequence, Sequence)]
+inputP = sepEndBy lineP newline
     where lineP = (,) <$> (sequenceP <* string "| ") <*> sequenceP
           sequenceP = sepEndBy digitP (char ' ')
           digitP    = many1 segmentP
@@ -21,16 +21,10 @@ must (Left y)  = error $ show y
 
 digitMap :: Map.Map Digit Int
 digitMap = Map.fromList
-    [ ("abcefg",  0)
-    , ("cf",      1)
-    , ("acdeg",   2)
-    , ("acdfg",   3)
-    , ("bcdf",    4)
-    , ("abdfg",   5)
-    , ("abdefg",  6)
-    , ("acf",     7)
-    , ("abcdefg", 8)
-    , ("abcdfg",  9) ]
+    [ ("cf",   1), ("acdeg",   2), ("acdfg",  3)
+    , ("bcdf", 4), ("abdfg",   5), ("abdefg", 6)
+    , ("acf",  7), ("abcdefg", 8), ("abcdfg", 9)
+    ,              ("abcefg",  0) ]
 
 segmentAttributes :: Sequence -> Segment -> (Int, Int)
 segmentAttributes seq seg = (appearances, associateCount)
@@ -59,9 +53,9 @@ digitToInt = (digitMap Map.!)
 
 sequenceToInt :: Sequence -> Int
 sequenceToInt = combineDigits . map digitToInt
-    where combineDigits = foldr (\i total -> (total * 10) + i) 0 . reverse
+    where combineDigits = foldl (\total i -> (total * 10) + i) 0
 
-partOne = length . filter (`elem` [1,4,7,8]) . map digitToInt . concat . map fixSegments
+partOne = length . filter (`elem` [1,4,7,8]) . map digitToInt . concatMap fixSegments
 partTwo = sum . map sequenceToInt . map fixSegments
 
-main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . must . parse inputParser ""
+main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . must . parse inputP ""
