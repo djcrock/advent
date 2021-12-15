@@ -27,14 +27,11 @@ adjacent grid (r, c) =
     , c' >= 0 && c' < length (head grid) ]
 
 -- Pop a value off of the priority queue
+-- It might be possible to get an already visited coordinate
+-- But I haven't encountered any issues
 nextVisit :: State -> (State, Coordinate)
-nextVisit (g, dists, pq, unvis) =
-    -- Try to get the minimum value from the priority queue
-    case Set.minView pq of
-        Nothing               -> error "Nothing in the PQueue"
-        -- It might be possible to get an already visited coordinate
-        -- But I haven't encountered any issues
-        (Just ((_, c), rest)) -> ((g, dists, rest, unvis), c)
+nextVisit (g, dists, pq, unvis) = ((g, dists, rest, unvis), c)
+    where ((_,c), rest) = Set.deleteFindMin pq
 
 -- Update the given coordinate's distance if it is lower than before
 markDistance :: Coordinate -> Int -> State -> State
