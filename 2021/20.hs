@@ -6,7 +6,7 @@ parseInput = (\x -> (head x, drop 2 x)) . map (map (=='#')) . lines
 -- The "flood" value represents the infinite surrounding space
 enhancements :: Bool -> [Bool] -> Image -> [Image]
 enhancements flood lut img = img : enhancements nextFlood lut enhanced
-    where enhanced  = map (map ((lut !!) . bitsToInt)) [[[
+    where enhanced  = [[ lut !! bitsToInt [
                         maybe flood id ((img !? sr) >>= (!? sc))
                         | sr <- [r-1..r+1], sc <- [c-1..c+1] ]
                         | c  <- [-1..length $ head img] ]
