@@ -13,11 +13,11 @@ parseInput :: String -> [Scan]
 parseInput = must . parse (sepEndBy scannerP newline) ""
     where scannerP = commentP >> sepEndBy beaconP newline
           commentP = string "---" >> manyTill anyChar newline
-          beaconP = (,,) <$> (numP <* char ',') <*> (numP <* char ',') <*> numP
-          numP   = try negP <|> natP
-          negP   = negate <$> (char '-' *> natP)
-          natP   = read <$> many1 digit
-          must  = either (error . show) id
+          beaconP  = (,,) <$> (numP <* char ',') <*> (numP <* char ',') <*> numP
+          numP     = try negP <|> natP
+          negP     = negate <$> (char '-' *> natP)
+          natP     = read <$> many1 digit
+          must     = either (error . show) id
 
 rotations :: [Transformation]
 rotations =
@@ -58,8 +58,8 @@ translate (dx,dy,dz) (x,y,z) = (x+dx, y+dy, z+dz)
 -- their matching points.
 rotation :: [(Point,Point)] -> Maybe Transformation
 rotation pairs = find alignsPairs rotations
-    where alignsPairs r = allEqual $ map (\(x,y) -> translation (r y) x) pairs
-          allEqual xs   = all (==(head xs)) (tail xs)
+    where alignsPairs r   = allEqual $ map (\(x,y) -> translation (r y) x) pairs
+          allEqual (x:xs) = all (==x) xs
 
 transformation :: Scan -> Scan -> Maybe Transformation
 transformation target source = do
@@ -72,14 +72,14 @@ transformation target source = do
 -- The set of (x,y,z) component distances from a point to its neighbors uniquely
 -- (in this puzzle, at least) identifies that point with respect to those
 -- neighbors. By ordering the component distances by magnitude, they become
--- constant with respect to rotation. This allows them to be used compared
--- against points measured from other frames of reference (i.e. other scanners).
+-- constant with respect to rotation. This allows them to be compared against
+-- points measured from other frames of reference (i.e. other scanners).
 distance :: Point -> Point -> [Int]
 distance (x1,y1,z1) (x2,y2,z2) = sort [abs (x2-x1), abs (y2-y1), abs (z2-z1)]
 
 distances :: Scan -> Distances
-distances ps = Map.fromList $ map (\p -> (p, distances p)) ps
-    where distances p1 = Set.fromList $ map (distance p1) ps
+distances ps = Map.fromList $ map (\p -> (p, distanceSet p)) ps
+    where distanceSet p = Set.fromList $ map (distance p) ps
 
 matchingPoint :: Distances -> Set.Set [Int] -> Maybe Point
 matchingPoint ds s = listToMaybe $ Map.keys $ Map.filter isMatch ds
