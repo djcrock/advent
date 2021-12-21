@@ -1,49 +1,41 @@
 import qualified Data.Map as Map
 
-type State = ((Int,Int), (Int,Int), Int)
+-- (players@[(position, score)], rolls)
+type Game = ([(Int,Int)],Int)
 
-parseInput :: String -> (Int,Int)
-parseInput = (\[p1,p2] -> (p1,p2)) . map (read . drop 28) . lines
+parseInput :: String -> Game
+parseInput = (,0) . map ((,0) . read . drop 28) . lines
 
-playDeterministic :: State -> State
-playDeterministic (positions, scores, rolls) =
-    (set position positions, set score scores, rolls+3)
-    where isPlayerOne   = mod rolls 6 == 0
-          getActive     = if isPlayerOne then fst else snd
-          set x (p1,p2) = if isPlayerOne then (x,p2) else (p1,x)
-          move          = sum [(mod x 100) + 1 | x <- [rolls..rolls+2]]
-          position      = (mod ((getActive positions) + move - 1) 10) + 1
-          score         = (getActive scores) + position
+makeMove :: Int -> Game -> Game
+makeMove move (players, rolls) = (players', rolls+3)
+    where turn        = div (mod rolls (3 * length players)) (length players)
+          (pos,score) = players !! turn
+          pos'        = (mod (pos + move - 1) 10) + 1
+          player'     = (pos', score + pos')
+          players'    = (take turn players) ++ player' : (drop (turn+1) players)
+
+wins :: Int -> Game -> [Int]
+wins threshold = map (fromEnum . (>= threshold) . snd) . fst
+
+practice :: Game -> Game
+practice game@(_,rolls)
+    | any (>0) (wins 1000 game) = game
+    | otherwise = practice (makeMove move game)
+    where move = sum [(mod x 100) + 1 | x <- [rolls..rolls+2]]
           
-diracMap :: Map.Map Int Int
-diracMap = foldr (\k -> Map.insertWith (+) k 1) Map.empty possibleRolls
-    where possibleRolls = [x+y+z | x <- [1..3], y <- [1..3], z <- [1..3]]
+dirac :: Map.Map Game [Int] -> Game -> (Map.Map Game [Int],[Int])
+dirac memo game
+    | Map.member game memo  = (memo, memo Map.! game)
+    | any (>0) winners      = (Map.insert game winners memo, winners)
+    | otherwise             = foldr play (memo, [0,0..]) diracRolls
+    where winners    = wins 21 game
+          diracRolls = [(3,1),(4,3),(5,6),(6,7),(7,6),(8,3),(9,1)]
+          play (move, universes) (memo, totalWins) =
+            let (memo', wins) = (dirac memo $ makeMove move game)
+                totalWins'    = zipWith (+) totalWins (map (* universes) wins)
+            in  (Map.insert game totalWins' memo', totalWins')
 
-playDirac :: State -> (Int, Int)
-playDirac (positions, scores@(s1,s2), rolls)
-    | s1 >= 21 = (1,0)
-    | s2 >= 21 = (0,1)
-    | otherwise  = foldr1 (\(w1,w2) (w3,w4) -> (w1+w3, w2+w4)) $ do
-        roll <- [3..9]
-        let universes = diracMap Map.! roll
-        let position  = (mod ((getActive positions) + roll - 1) 10) + 1
-        let score     = (getActive scores) + position
-        let newState  = (set position positions, set score scores, rolls+3)
-        let (w1,w2)   = playDirac newState
-        pure (w1*universes, w2*universes)
-    where isPlayerOne   = mod rolls 6 == 0
-          getActive     = if isPlayerOne then fst else snd
-          set x (p1,p2) = if isPlayerOne then (x,p2) else (p1,x)
-
-
-won :: State -> Bool
-won (_, (s1,s2), _) = s1 >= 1000 || s2 >= 1000
-
-solution :: State -> Int
-solution (_, (s1,s2), rolls) = (min s1 s2) * rolls
-
-partOne positions = solution $ head $ dropWhile (not . won) $ iterate playDeterministic (positions, (0,0), 0)
---partOne positions = take 3 $ iterate play (positions, (0,0), 0)
-partTwo positions = uncurry max $ playDirac (positions, (0,0), 0)
+partOne = (\(players, rolls) -> (minimum $ map snd players) * rolls) . practice
+partTwo = maximum . snd . dirac Map.empty
 
 main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . parseInput
