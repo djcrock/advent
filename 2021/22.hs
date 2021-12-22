@@ -1,26 +1,21 @@
 import Text.Parsec
 
-type Range = (Int,Int)
-type Cuboid = [Range]
+type Cuboid = [(Int,Int)]
 type Instruction = (Bool,Cuboid)
 
 parseInput :: String -> [Instruction]
 parseInput = must . parse (sepEndBy instP newline) ""
-    where instP   = (,) <$> (powerP <* space) <*> (sepBy rangeP (char ','))
-          powerP  = try (string "on"  *> pure True)
-                    <|> (string "off" *> pure False)
-          rangeP  = (,) <$> (oneOf "xyz" *> char '=' *> numP)
-                        <*> (string ".." *> numP)
-          numP    = try negP <|> natP
-          negP    = negate <$> (char '-' *> natP)
-          natP    = read <$> many1 digit
-          must    = either (error . show) id
+    where instP  = (,) <$> (powerP <* space) <*> (sepBy rangeP (char ','))
+          powerP = try (True <$ string "on") <|> (False <$ string "off")
+          rangeP = (,) <$> (anyChar *> char '=' *> numP) <*> (string ".." *> numP)
+          numP   = option id (negate <$ char '-') <*> (read <$> many1 digit)
+          must   = either (error . show) id
 
 touches :: Cuboid -> Cuboid -> Bool
 touches [] _ = True
 touches ((m1,m2):ms) ((t1,t2):ts) = t1 <= m2 && m1 <= t2 && touches ms ts
 
--- Apply a mask to a cuboid, breaking it into up to 6 pieces
+-- Apply a mask to a target cuboid, breaking it into up to 6 pieces
 split :: Cuboid -> Cuboid -> [Cuboid]
 split _ [] = []
 split ((m1,m2):masks) ((t1,t2):targets) =
