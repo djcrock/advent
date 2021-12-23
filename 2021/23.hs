@@ -105,7 +105,9 @@ dijkstra start depth = result Map.! (finish depth)
           result = search (depth, dists, pq, vis) start (finish depth)
 
 plotResult :: Int -> (Int,[Burrow]) -> String
-plotResult depth (c,bs) = unlines $ (show c) : map plotBurrow (reverse bs)
+plotResult depth (c,bs) = unlines
+    $ (show c ++ " energy used in " ++ show ((length bs)-1) ++ " moves")
+    : map plotBurrow (reverse bs)
     where plotBurrow b = unlines
             [ [ maybe (emptySpace (x,y)) id (Map.lookup (x,y) b)
             | x <- [0..(length hallway)-1] ]
