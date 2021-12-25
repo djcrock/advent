@@ -1,0 +1,315 @@
+; w1  =
+; w2  = 
+; w3  = 
+; w4  = w3  - 8
+; w5  = 
+; w6  = w5  + 8
+; w7  = 
+; w8  = 
+; w9  = w8  + 6
+; w10 = 
+; w11 = w10 + 5
+; w12 = w7  - 3
+; w13 = w2  + 6
+; w14 = w1  - 5
+
+; z = w + 6
+; z = w1 + 6
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 12
+eql x w
+eql x 0   ; x=1
+mul y 0
+add y 25  ; y=25
+mul y x
+add y 1   ; y=26
+mul z y
+mul y 0
+add y w   ; y=w
+add y 6   ; y=w+6
+mul y x   ; y=w+6
+add z y
+
+; z = (z * 26) + w + 6
+; z = ((w1 + 6) * 26) + w2 + 6
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = z % 26
+div z 1
+add x 10
+eql x w
+eql x 0   ; x = 1
+mul y 0
+add y 25  ; y = 25
+mul y x
+add y 1   ; y = 26
+mul z y   ; z = z * 26
+mul y 0
+add y w   ; y = w
+add y 6   ; y = w + 6
+mul y x
+add z y   ; z = (z * 26) + w + 6
+
+; z = (z * 26) + w + 3
+; z = (((w1 + 6) * 26) + w2 + 6) * 26) + w3 + 3
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = z % 26
+div z 1   ; z = z
+add x 13  ; x = (z % 26) + 13
+eql x w
+eql x 0   ; x = 1
+mul y 0
+add y 25  ; y = 25
+mul y x
+add y 1   ; y = 26
+mul z y   ; z = z * 26
+mul y 0
+add y w   ; y = w
+add y 3   ; y = w + 3
+mul y x
+add z y   ; z = (z * 26) + w + 3
+
+; z = z / 26
+; z = ((w1 + 6) * 26) + w2 + 6
+; w4 = w3 - 8
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = z % 26 ; x = w3 + 3
+div z 26  ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+add x -11 ; x = (z % 26) - 11 ; x = w3 - 8
+eql x w   ; x = (0,1) assume 0  *** w4 = w3 - 8 ***
+eql x 0   ; x = (0,1)
+mul y 0
+add y 25  ; y = 25
+mul y x   ; y = (0,25)
+add y 1   ; y = (1,26) assume 1
+mul z y   ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+mul y 0
+add y w   ; y = w
+add y 11  ; y = w + 11
+mul y x   ; y = 0
+add z y     
+
+; z = (z * 26) + w + 9
+; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w5 + 9
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = x % 26 ; x = w2 + 6
+div z 1
+add x 13
+eql x w
+eql x 0   ; x = 1
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 26
+mul z y   ; z = z * 26
+mul y 0
+add y w   ; y = w
+add y 9   ; y = w + 9
+mul y x   ; y = w + 9
+add z y   ; z = (z * 26) + w + 9
+
+; z = z / 26
+; z = ((w1 + 6) * 26) + w2 + 6
+; w6 = w5 + 8
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = z % 26 ; x = w5 + 9
+div z 26  ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+add x -1  ; x = (z % 26) - 1 ; x = w5 + 8
+eql x w   ; x = 1  *** w6 = w5 + 8 ***
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x   ; y = 0
+add y 1   ; y = 1
+mul z y   ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+mul y 0
+add y w   ; y = w
+add y 3   ; y = w + 3
+mul y x   ; y = 0
+add z y   ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+
+; z = (z * 26) + w + 13
+; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+inp w
+mul x 0
+add x z   ; x = z
+mod x 26  ; x = z % 26 ; x = w2 + 6
+div z 1   ; z = z
+add x 10
+eql x w   ; x = 0
+eql x 0   ; x = 1
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 26
+mul z y   ; z = z * 26
+mul y 0
+add y w   ; y = w
+add y 13  ; y = w + 13
+mul y x
+add z y   ; z = (z * 26) + w + 13 ; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+
+; z = (z * 26) + w + 6
+; z = ((((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13) * 26) + w8 + 6
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 11
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 6
+mul y x
+add z y
+
+; z = (z / 26)
+; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+; w9 = w8 + 6
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w8 + 6
+div z 26  ; z = z / 26 ; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+add x 0
+eql x w   ; x = 1 ; w9 = w8 + 6
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 1
+mul z y   ; z = z / 26
+mul y 0
+add y w
+add y 14  ; y = w + 14
+mul y x   ; y = 0
+add z y   ; z = (z / 26) ; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+
+; z = (z * 26) + w + 10
+; z = ((((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13) * 26) + w10 + 10
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w7 + 13
+div z 1   ; z = z
+add x 10
+eql x w   ; x = 0
+eql x 0   ; x = 1
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 26
+mul z y   ; z = z * 26
+mul y 0
+add y w
+add y 10
+mul y x   ; y = w + 10
+add z y   ; z = (z * 26) + w + 10 ; z = ((((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13) * 26) + w + 10
+
+; z = z / 26
+; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+; w11 = w10 + 5
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w10 + 10
+div z 26  ; z = z / 26 ; z = ((((w1 + 6) * 26) + w2 + 6) * 26) + w7 + 13
+add x -5  ; x = w10 + 5
+eql x w   ; x = 1
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 1
+mul z y
+mul y 0
+add y w
+add y 12
+mul y x
+add z y
+
+; z = z / 26
+; z = ((w1 + 6) * 26) + w2 + 6
+; w12 = w7 - 3
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w7 + 13
+div z 26  ; z = z / 26 ; z = ((w1 + 6) * 26) + w2 + 6
+add x -16 ; x = w7 - 3
+eql x w   ; x = 1
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 1
+mul z y
+mul y 0
+add y w
+add y 10
+mul y x
+add z y
+
+; z = z / 26
+; z = w1 + 6
+; w13 = w2 - 1
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w2 + 6
+div z 26  ; z = z / 26 ; z = w1 + 6
+add x -7  ; x = w2 - 1
+eql x w   ; x = 1
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 1
+mul z y
+mul y 0
+add y w
+add y 11
+mul y x
+add z y
+
+; z = x % 26
+; z = 0
+; w14 = w1 - 5
+inp w
+mul x 0
+add x z
+mod x 26  ; x = z % 26 ; x = w1 + 6
+div z 26  ; z = x % 26 ; z = 0
+add x -11 ; x = w1 - 5
+eql x w   ; x = 1
+eql x 0   ; x = 0
+mul y 0
+add y 25
+mul y x
+add y 1   ; y = 1
+mul z y
+mul y 0
+add y w
+add y 15
+mul y x
+add z y
