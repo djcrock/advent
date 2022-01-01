@@ -4,6 +4,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.State hiding ( fix )
 import Data.Array
+import Data.List
 
 runSolutions :: Show b => [(a -> b)] -> (String -> a) -> IO ()
 runSolutions ss parser = interact $ (++ "\n") . show . sequence ss . parser
@@ -109,6 +110,23 @@ fix f x = if x == f x then x else fix f (f x)
 -- Iterate a function until the result stops changing, returning each value
 iterateFix :: Eq a => (a -> a) -> a -> [a]
 iterateFix f x = if x == f x then [x] else x : iterateFix f (f x)
+
+both :: (a -> b) -> (a, a) -> (b, b)
+both f (x, y) = (f x, f y)
+
+intToDigits :: Int -> [Int]
+intToDigits 0 = []
+intToDigits n = intToDigits (div n 10) ++ [mod n 10]
+
+digitsToInt :: [Int] -> Int
+digitsToInt = foldl1 (\acc digit -> acc * 10 + digit)
+
+-- Get the length of each run of matching list elements
+-- e.g. "foobar" -> [1,2,1,1,1]
+runLengths :: Eq a => [a] -> [Int]
+runLengths []       = []
+runLengths xs@(x:_) = length same : runLengths rest
+    where (same,rest) = span (== x) xs
 
 -- Vectors
 
