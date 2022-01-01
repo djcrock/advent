@@ -109,3 +109,16 @@ fix f x = if x == f x then x else fix f (f x)
 -- Iterate a function until the result stops changing, returning each value
 iterateFix :: Eq a => (a -> a) -> a -> [a]
 iterateFix f x = if x == f x then [x] else x : iterateFix f (f x)
+
+-- Vectors
+
+type Vec2 = (Int,Int)
+
+vec2Op :: (Int -> Int -> Int) -> Vec2 -> Vec2 -> Vec2
+vec2Op f (x1,y1) (x2,y2) = (f x1 x2, f y1 y2)
+
+vec2Add :: Vec2 -> Vec2 -> Vec2
+vec2Add = vec2Op (+)
+
+manhattan :: Vec2 -> Vec2 -> Int
+manhattan (x1,y1) (x2,y2) = (abs (x2-x1)) + (abs (y2-y1))
