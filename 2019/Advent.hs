@@ -35,6 +35,8 @@ type Stateful a = State Computer a
 data Computer = Computer
     { instPtr :: Address
     , memory  :: Memory
+    , inputs  :: [Int]
+    , outputs :: [Int]
     } deriving (Eq, Show)
 
 readMemory :: Parser Memory
@@ -44,13 +46,19 @@ readMemory str = listArray (0, length ints - 1) ints
 readComputer :: Parser Computer
 readComputer str = let intCode = readMemory str in Computer
     { instPtr = 0
-    , memory  = intCode }
+    , memory  = intCode
+    , inputs  = []
+    , outputs = []
+    }
 
 getPtr :: State Computer Address
 getPtr = gets instPtr
 
 incPtr :: Int -> Mutation
-incPtr n = modify $ \c -> c { instPtr = instPtr c + n }
+incPtr = offset setPtr
+
+setPtr :: Address -> Mutation
+setPtr addr = modify $ \c -> c { instPtr = addr }
 
 getAddr :: Address -> Stateful Int
 getAddr addr = gets $ ((! addr) . memory)
@@ -65,32 +73,76 @@ offset :: (Address -> Stateful a) -> Int -> Stateful a
 offset f n = gets instPtr >>= f . (+n)
 
 param :: Int -> Stateful Int
-param = offset getAddr
-
-paramDeref :: Int -> Stateful Int
-paramDeref = offset deref
+param n = do
+    opcode <- decodeOp
+    case opcode !! n of
+        0 -> offset deref   n
+        1 -> offset getAddr n
 
 outputParam :: Int -> Int -> Mutation
-outputParam p val = param p >>= flip setAddr val
+outputParam p val = offset getAddr p >>= flip setAddr val
 
-binaryOp :: (Int -> Int -> Int) -> Mutation
+binaryOp :: Enum a => (Int -> Int -> a) -> Mutation
 binaryOp f = do
-    x <- paramDeref 1
-    y <- paramDeref 2
-    outputParam 3 (f x y)
+    x <- param 1
+    y <- param 2
+    -- fromEnum handles both Ints and Bools (True/False -> 1/0)
+    outputParam 3 (fromEnum $ f x y)
     incPtr 4
 
-opAdd  = binaryOp (+)
-opMul  = binaryOp (*)
-opHalt = pure ()
+opInput :: Mutation
+opInput = do
+    val <- gets $ head . inputs
+    modify $ \c -> c { inputs = tail (inputs c) }
+    outputParam 1 val
+    incPtr 2
+
+opOutput :: Mutation
+opOutput = do
+    val <- param 1
+    modify $ \c -> c { outputs = val : outputs c }
+    incPtr 2
+
+opJumpIf :: (Int -> Bool) -> Mutation
+opJumpIf pred = do
+    val <- param 1
+    tgt <- param 2
+    if pred val
+        then setPtr tgt
+        else incPtr 3
+
+-- Decode the opcode into a stack of parameter modes with the operation on top.
+-- Infinite 0s are appended to account for any number of parameters.
+-- e.g. 1002 -> [2,0,1,0,0..] (note: the operation here is "02")
+decodeOp :: Stateful [Int]
+decodeOp = do
+    opcode <- offset getAddr 0
+    let digits = (reverse (intToDigits opcode)) ++ repeat 0
+    let operation = digitsToInt (reverse (take 2 digits))
+    pure (operation : drop 2 digits)
+
+halt :: Mutation
+halt = pure ()
+
+crash :: String -> Mutation
+crash msg = do
+    c <- get
+    error $ msg ++ " --- " ++ show c
 
 step :: Mutation
 step = do
-    opcode <- param 0
-    case opcode of
-        1  -> opAdd
-        2  -> opMul
-        99 -> opHalt
+    opcode <- decodeOp
+    case head opcode of
+        1  -> binaryOp (+)
+        2  -> binaryOp (*)
+        3  -> opInput
+        4  -> opOutput
+        5  -> opJumpIf (/= 0)
+        6  -> opJumpIf (== 0)
+        7  -> binaryOp (<)
+        8  -> binaryOp (==)
+        99 -> halt
+        otherwise -> crash "Unexpected op"
 
 run :: Computer -> Computer
 run = fix (execState step)
@@ -100,6 +152,9 @@ peek n = (! n) . memory
 
 poke :: Address -> Int -> Computer -> Computer
 poke addr val c = c { memory = memory c // [(addr, val)] }
+
+setInputs :: [Int] -> Computer -> Computer
+setInputs xs c = c { inputs = xs }
 
 -- Helpful functions
 
