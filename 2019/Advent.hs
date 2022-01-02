@@ -16,6 +16,11 @@ type Parser a = (String -> a)
 readLines :: Read a => Parser [a]
 readLines = map read . lines
 
+readCommaSep :: Read a => Parser [a]
+readCommaSep = map read . splitOn ','
+
+-- Lists
+
 splitOn :: Char -> String -> [String]
 splitOn _ [] = [""]
 splitOn c (x:xs)
@@ -23,8 +28,8 @@ splitOn c (x:xs)
     | otherwise = (x:segment) : segments
     where (segment:segments) = splitOn c xs
 
-readCommaSep :: Read a => Parser [a]
-readCommaSep = map read . splitOn ','
+disjoint :: Eq a => [a] -> [a] -> [a]
+disjoint xs ys = union xs ys \\ intersect xs ys
 
 -- Intcode
 
