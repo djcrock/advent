@@ -40,8 +40,8 @@ type Stateful a = State Computer a
 data Computer = Computer
     { instPtr :: Address
     , memory  :: Memory
-    , inputs  :: [Int]
-    , outputs :: [Int]
+    , inputs  :: Queue Int
+    , outputs :: Queue Int
     } deriving (Eq, Show)
 
 readMemory :: Parser Memory
@@ -52,8 +52,8 @@ readComputer :: Parser Computer
 readComputer str = let intCode = readMemory str in Computer
     { instPtr = 0
     , memory  = intCode
-    , inputs  = []
-    , outputs = []
+    , inputs  = emptyQ
+    , outputs = emptyQ
     }
 
 getPtr :: State Computer Address
@@ -95,17 +95,22 @@ binaryOp f = do
     outputParam 3 (fromEnum $ f x y)
     incPtr 4
 
+-- Read from the input buffer. Blocks on an empty buffer.
 opInput :: Mutation
 opInput = do
-    val <- gets $ head . inputs
-    modify $ \c -> c { inputs = tail (inputs c) }
-    outputParam 1 val
-    incPtr 2
+    val <- gets inputs
+    case popQ val of
+        (Nothing,_)   -> pure ()
+        (Just x,val') -> do
+            modify $ \c -> c { inputs = val' }
+            outputParam 1 x
+            incPtr 2
 
+-- Write to the output buffer
 opOutput :: Mutation
 opOutput = do
     val <- param 1
-    modify $ \c -> c { outputs = val : outputs c }
+    modify $ \c -> c { outputs = pushQ val (outputs c) }
     incPtr 2
 
 opJumpIf :: (Int -> Bool) -> Mutation
@@ -159,7 +164,37 @@ poke :: Address -> Int -> Computer -> Computer
 poke addr val c = c { memory = memory c // [(addr, val)] }
 
 setInputs :: [Int] -> Computer -> Computer
-setInputs xs c = c { inputs = xs }
+setInputs xs c = c { inputs = fromListQ xs }
+
+pushInput :: Int -> Computer -> Computer
+pushInput x c = c { inputs = pushQ x (inputs c) }
+
+popOutput :: Computer -> (Maybe Int, Computer)
+popOutput c = (out, c { outputs = outs })
+    where (out,outs) = popQ (outputs c)
+
+-- Queues
+
+data Queue a = Queue [a] [a] deriving (Eq, Show)
+--newtype Queue a = Queue [a] deriving (Eq, Show)
+
+emptyQ :: Queue a
+emptyQ = Queue [] []
+
+pushQ :: a -> Queue a -> Queue a
+pushQ x (Queue ins outs) = Queue (x:ins) outs
+
+popQ :: Queue a -> (Maybe a, Queue a)
+popQ (Queue []  []        ) = (Nothing,  Queue []  []  )
+popQ (Queue ins (out:outs)) = (Just out, Queue ins outs)
+popQ (Queue ins []        ) = (Just out, Queue []  outs)
+    where (out:outs) = reverse ins
+
+fromListQ :: [a] -> Queue a
+fromListQ = Queue []
+
+toListQ :: Queue a -> [a]
+toListQ (Queue ins outs) = outs ++ reverse ins
 
 -- Helpful functions
 
