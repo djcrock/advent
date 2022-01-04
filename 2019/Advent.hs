@@ -9,6 +9,9 @@ import Data.List
 runSolutions :: Show b => [(a -> b)] -> (String -> a) -> IO ()
 runSolutions ss parser = interact $ (++ "\n") . show . sequence ss . parser
 
+runSolutionsStr :: [(a -> String)] -> (String -> a) -> IO ()
+runSolutionsStr ss parser = interact $ unlines . sequence ss . parser
+
 -- Parsers
 
 type Parser a = (String -> a)
