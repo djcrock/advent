@@ -4,6 +4,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.State hiding ( fix )
 import Data.List
+import Data.Ord ( comparing )
 import qualified Data.Map as Map
 
 runSolutions :: Show b => [(a -> b)] -> (String -> a) -> IO ()
@@ -34,6 +35,21 @@ splitOn c (x:xs)
 disjoint :: Eq a => [a] -> [a] -> [a]
 disjoint xs ys = union xs ys \\ intersect xs ys
 
+deleteAll :: Eq a => a -> [a] -> [a]
+deleteAll _ []     = []
+deleteAll x (y:ys) = (if x == y then id else (y:)) $ deleteAll x ys
+
+categorize :: Eq b => (a -> b) -> [a] -> [(b,[a])]
+categorize _ []     = []
+categorize f (x:xs) = (f x, matches) : categorize f rest
+    where (matches,rest) = partition ((==(f x)) . f) (x:xs)
+
+minimumOn :: Ord b => (a -> b) -> [a] -> a
+minimumOn = minimumBy . comparing
+
+maximumOn :: Ord b => (a -> b) -> [a] -> a
+maximumOn = maximumBy . comparing
+
 -- Intcode
 
 type Address = Int
@@ -49,8 +65,7 @@ data Computer = Computer
     } deriving (Eq, Show)
 
 readMemory :: Parser Memory
-readMemory str = Map.fromList $ zip [0..] ints
-    where ints = readCommaSep str
+readMemory = Map.fromList . zip [0..] . readCommaSep
 
 readComputer :: Parser Computer
 readComputer str = let intCode = readMemory str in Computer
