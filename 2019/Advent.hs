@@ -3,8 +3,8 @@ module Advent where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.State hiding ( fix )
-import Data.Array
 import Data.List
+import qualified Data.Map as Map
 
 runSolutions :: Show b => [(a -> b)] -> (String -> a) -> IO ()
 runSolutions ss parser = interact $ (++ "\n") . show . sequence ss . parser
@@ -37,58 +37,75 @@ disjoint xs ys = union xs ys \\ intersect xs ys
 -- Intcode
 
 type Address = Int
-type Memory = Array Address Int
+type Memory = Map.Map Address Int
 type Mutation = State Computer ()
 type Stateful a = State Computer a
 data Computer = Computer
     { instPtr :: Address
+    , relBase :: Address
     , memory  :: Memory
     , inputs  :: Queue Int
     , outputs :: Queue Int
     } deriving (Eq, Show)
 
 readMemory :: Parser Memory
-readMemory str = listArray (0, length ints - 1) ints
+readMemory str = Map.fromList $ zip [0..] ints
     where ints = readCommaSep str
 
 readComputer :: Parser Computer
 readComputer str = let intCode = readMemory str in Computer
     { instPtr = 0
+    , relBase = 0
     , memory  = intCode
     , inputs  = emptyQ
     , outputs = emptyQ
     }
 
-getPtr :: State Computer Address
+getPtr :: Stateful Address
 getPtr = gets instPtr
 
 incPtr :: Int -> Mutation
-incPtr = offset setPtr
+incPtr = offset getPtr setPtr
 
 setPtr :: Address -> Mutation
 setPtr addr = modify $ \c -> c { instPtr = addr }
 
+getRelBase :: Stateful Address
+getRelBase = gets relBase
+
+incRelBase :: Int -> Mutation
+incRelBase = offset getRelBase setRelBase
+
+setRelBase :: Address -> Mutation
+setRelBase addr = modify $ \c -> c { relBase = addr }
+
 getAddr :: Address -> Stateful Int
-getAddr addr = gets $ ((! addr) . memory)
+getAddr addr = gets $ (maybe 0 id . (Map.lookup addr) . memory)
 
 deref :: Address -> Stateful Int
 deref = getAddr <=< getAddr
 
 setAddr :: Address -> Int -> Mutation
-setAddr addr val = modify $ \c -> c { memory = memory c // [(addr,val)] }
+setAddr addr val = modify $ \c -> c { memory = Map.insert addr val (memory c) }
 
-offset :: (Address -> Stateful a) -> Int -> Stateful a
-offset f n = gets instPtr >>= f . (+n)
+offset :: Stateful Address -> (Address -> Stateful a) -> Int -> Stateful a
+offset sa f n = sa >>= f . (+n)
 
 param :: Int -> Stateful Int
 param n = do
     opcode <- decodeOp
     case opcode !! n of
-        0 -> offset deref   n
-        1 -> offset getAddr n
+        0 -> offset getPtr deref   n
+        1 -> offset getPtr getAddr n
+        2 -> offset getPtr getAddr n >>= offset getRelBase getAddr
 
 outputParam :: Int -> Int -> Mutation
-outputParam p val = offset getAddr p >>= flip setAddr val
+outputParam n val = do
+    opcode <- decodeOp
+    case opcode !! n of
+        0 -> offset getPtr getAddr n >>= flip setAddr val
+        1 -> crash "Output parameters cannot be in immediate mode"
+        2 -> offset getPtr getAddr n >>= offset getRelBase (flip setAddr val)
 
 binaryOp :: Enum a => (Int -> Int -> a) -> Mutation
 binaryOp f = do
@@ -129,10 +146,13 @@ opJumpIf pred = do
 -- e.g. 1002 -> [2,0,1,0,0..] (note: the operation here is "02")
 decodeOp :: Stateful [Int]
 decodeOp = do
-    opcode <- offset getAddr 0
+    opcode <- offset getPtr getAddr 0
     let digits = (reverse (intToDigits opcode)) ++ repeat 0
     let operation = digitsToInt (reverse (take 2 digits))
     pure (operation : drop 2 digits)
+
+opUpdateRelBase :: Mutation
+opUpdateRelBase = (param 1 >>= incRelBase) *> incPtr 2
 
 halt :: Mutation
 halt = pure ()
@@ -154,6 +174,7 @@ step = do
         6  -> opJumpIf (== 0)
         7  -> binaryOp (<)
         8  -> binaryOp (==)
+        9  -> opUpdateRelBase
         99 -> halt
         otherwise -> crash "Unexpected op"
 
@@ -161,10 +182,10 @@ run :: Computer -> Computer
 run = fix (execState step)
 
 peek :: Address -> Computer -> Int
-peek n = (! n) . memory
+peek n = maybe 0 id . (Map.lookup n) . memory
 
 poke :: Address -> Int -> Computer -> Computer
-poke addr val c = c { memory = memory c // [(addr, val)] }
+poke addr val c = c { memory = Map.insert addr val (memory c) }
 
 setInputs :: [Int] -> Computer -> Computer
 setInputs xs c = c { inputs = fromListQ xs }
