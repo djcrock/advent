@@ -212,6 +212,9 @@ popOutput :: Computer -> (Maybe Int, Computer)
 popOutput c = (out, c { outputs = outs })
     where (out,outs) = popQ (outputs c)
 
+hasOutput :: Computer -> Bool
+hasOutput = (/= emptyQ) . outputs
+
 -- Queues
 
 data Queue a = Queue [a] [a] deriving (Eq, Show)
