@@ -32,6 +32,12 @@ splitOn c (x:xs)
     | otherwise = (x:segment) : segments
     where (segment:segments) = splitOn c xs
 
+-- Split a list into segments of a given length
+segment :: Int -> [a] -> [[a]]
+segment n xs = case splitAt n xs of
+    (curr, [])   -> [curr]
+    (curr, rest) -> curr : segment n rest
+
 disjoint :: Eq a => [a] -> [a] -> [a]
 disjoint xs ys = union xs ys \\ intersect xs ys
 
@@ -211,6 +217,9 @@ pushInput x c = c { inputs = pushQ x (inputs c) }
 popOutput :: Computer -> (Maybe Int, Computer)
 popOutput c = (out, c { outputs = outs })
     where (out,outs) = popQ (outputs c)
+
+allOutput :: Computer -> ([Int], Computer)
+allOutput c = (toListQ $ outputs c, c { outputs = emptyQ })
 
 hasOutput :: Computer -> Bool
 hasOutput = (/= emptyQ) . outputs

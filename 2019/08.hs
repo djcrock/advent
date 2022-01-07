@@ -11,12 +11,6 @@ black       = 0
 white       = 1
 transparent = 2
 
--- Split a list into segments of a given length
-segment :: Int -> [a] -> [[a]]
-segment n xs = case splitAt n xs of
-    (curr, [])   -> [curr]
-    (curr, rest) -> curr : segment n rest
-
 count :: Eq a => a -> [a] -> Int
 count x = length . filter (== x)
 
