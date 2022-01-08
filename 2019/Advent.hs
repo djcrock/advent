@@ -199,6 +199,21 @@ step = do
         99 -> halt
         otherwise -> crash "Unexpected op"
 
+go :: Stateful ()
+go = modify run
+
+pushInputS :: Int -> Stateful ()
+pushInputS = modify . pushInput
+
+mustPopOutputS :: Stateful Int
+mustPopOutputS = do
+    val <- gets outputs
+    case popQ val of
+        (Nothing,_)   -> pure $ error "Tried to pop empty output queue"
+        (Just x,val') -> do
+            modify $ \c -> c { outputs = val' }
+            pure x
+
 run :: Computer -> Computer
 run = fix (execState step)
 
@@ -217,6 +232,11 @@ pushInput x c = c { inputs = pushQ x (inputs c) }
 popOutput :: Computer -> (Maybe Int, Computer)
 popOutput c = (out, c { outputs = outs })
     where (out,outs) = popQ (outputs c)
+
+mustPopOutput :: Computer -> (Int, Computer)
+mustPopOutput c = case popOutput c of
+    (Nothing,_)  -> error "Tried to pop empty output queue"
+    (Just x, c') -> (x,c')
 
 allOutput :: Computer -> ([Int], Computer)
 allOutput c = (toListQ $ outputs c, c { outputs = emptyQ })
@@ -286,3 +306,10 @@ vec2Add = vec2Op (+)
 
 manhattan :: Vec2 -> Vec2 -> Int
 manhattan (x1,y1) (x2,y2) = (abs (x2-x1)) + (abs (y2-y1))
+
+orthoAdjacent :: Vec2 -> [Vec2]
+orthoAdjacent (x,y) =
+    [ (x  , y+1)
+    , (x+1, y  )
+    , (x  , y-1)
+    , (x-1, y  ) ]
