@@ -284,7 +284,7 @@ intToDigits :: Int -> [Int]
 intToDigits 0 = []
 intToDigits n = intToDigits (div n 10) ++ [mod n 10]
 
-digitsToInt :: [Int] -> Int
+digitsToInt :: Integral a => [a] -> a
 digitsToInt = foldl1 (\acc digit -> acc * 10 + digit)
 
 -- Get the length of each run of matching list elements
