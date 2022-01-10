@@ -11,9 +11,6 @@ black       = 0
 white       = 1
 transparent = 2
 
-count :: Eq a => a -> [a] -> Int
-count x = length . filter (== x)
-
 layers :: [Int] -> [[Int]]
 layers = segment (height * width)
 

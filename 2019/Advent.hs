@@ -25,12 +25,21 @@ readCommaSep = map read . splitOn ','
 
 -- Lists
 
-splitOn :: Char -> String -> [String]
-splitOn _ [] = [""]
+splitOn :: Eq a => a -> [a] -> [[a]]
+splitOn _ [] = [[]]
 splitOn c (x:xs)
-    | x == c    = "" : segment : segments
+    | x == c    = [] : segment : segments
     | otherwise = (x:segment) : segments
     where (segment:segments) = splitOn c xs
+
+splitOnList :: Eq a => [a] -> [a] -> [[a]]
+splitOnList [] _ = error "Tried to split on empty list"
+splitOnList _ [] = [[]]
+splitOnList xs (y:ys)
+    | isPrefixOf xs (y:ys) = [] : segment' : segments'
+    | otherwise            = (y:segment) : segments
+    where (segment:segments)   = splitOnList xs ys
+          (segment':segments') = splitOnList xs (drop (length xs) (y:ys))
 
 -- Split a list into segments of a given length
 segment :: Int -> [a] -> [[a]]
@@ -45,10 +54,20 @@ deleteAll :: Eq a => a -> [a] -> [a]
 deleteAll _ []     = []
 deleteAll x (y:ys) = (if x == y then id else (y:)) $ deleteAll x ys
 
+count :: Eq a => a -> [a] -> Int
+count x = length . filter (== x)
+
 categorize :: Eq b => (a -> b) -> [a] -> [(b,[a])]
 categorize _ []     = []
 categorize f (x:xs) = (f x, matches) : categorize f rest
     where (matches,rest) = partition ((==(f x)) . f) (x:xs)
+
+chunksOf :: Eq a => [[a]] -> [a] -> Maybe [[a]]
+chunksOf _ []  = pure []
+chunksOf xs ys = do
+    prefix <- find (flip isPrefixOf ys) xs
+    rest   <- chunksOf xs $ drop (length prefix) ys
+    pure (prefix : rest)
 
 minimumOn :: Ord b => (a -> b) -> [a] -> a
 minimumOn = minimumBy . comparing
