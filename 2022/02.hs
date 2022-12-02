@@ -25,12 +25,7 @@ forceOutcome (them, outcome) =
     (them, fromValue $ (value them) + (ord outcome - ord 'Y'))
 
 score :: (Char, Char) -> Int
-score (them, me) = value me + case (ord me) - (ord them) of
-    -2 -> 6
-    -1 -> 0
-    0  -> 3
-    1  -> 6
-    2  -> 0
+score (them, me) = value me + [3, 6, 0] !! ((ord me - ord them) `mod` 3)
 
 partOne = sum . map (score . fmap toMove)
 partTwo = sum . map (score . forceOutcome)
