@@ -1,33 +1,16 @@
-import Advent
-import Data.Char ( chr, ord )
-import Data.List ( elemIndex )
-import Data.Maybe ( fromJust )
+import Data.Char ( ord )
 
-parse :: String -> [(Char, Char)]
-parse = map (\(x:_:y:[]) -> (x, y)) . lines
+-- Map both "ABC" and "XYZ" to [0,1,2]
+parse :: String -> [(Int, Int)]
+parse = map (\[x,_,y] -> (ord x - ord 'A', ord y - ord 'X')) . lines
 
--- Each character has a value representing its standalone score/rank.
-value :: Char -> Int
-value c = 1 + (fromJust $ elemIndex c "ABC")
+score :: (Int, Int) -> Int
+score (them, me) = 1 + me + [3, 6, 0] !! ((me - them) `mod` 3)
 
--- Convert a value back into a character.
--- Values out of range (high or low) will "wrap" around.
-fromValue :: Int -> Char
-fromValue val = "ABC" !! mod (val + 2) 3
+forceOutcome :: (Int, Int) -> (Int, Int)
+forceOutcome (them, outcome) = (them, (them + outcome - 1) `mod` 3)
 
--- Char subtraction to map "XYZ" -> "ABC"
-toMove :: Char -> Char
-toMove c = chr $ ord c - 23
-
--- Based on opponent's play (ABC), satisfy the desired outcome (XYZ).
-forceOutcome :: (Char, Char) -> (Char, Char)
-forceOutcome (them, outcome) =
-    (them, fromValue $ (value them) + (ord outcome - ord 'Y'))
-
-score :: (Char, Char) -> Int
-score (them, me) = value me + [3, 6, 0] !! ((ord me - ord them) `mod` 3)
-
-partOne = sum . map (score . fmap toMove)
+partOne = sum . map score
 partTwo = sum . map (score . forceOutcome)
 
-main = runSolutions [partOne, partTwo] parse
+main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . parse
