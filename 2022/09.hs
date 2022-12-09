@@ -17,14 +17,13 @@ follow (hx, hy) (tx, ty) = let (dx, dy) = (hx-tx, hy-ty) in
         then (tx + signum dx, ty + signum dy)
         else (tx, ty)
 
-step :: (Point, [Point]) -> Char -> (Point, [Point])
-step (h, ts) dir = (h', tail $ scanl follow h' ts)
-    where h' = move dir h
+step :: [Point] -> Char -> [Point]
+step (h:ts) dir = scanl follow (move dir h) ts
 
 solve :: Int -> [Char] -> Int
-solve n = length . nub . map (last . snd) . scanl step ((0,0),replicate n (0,0))
+solve n = length . nub . map last . scanl step (replicate n (0,0))
 
-partOne = solve 1
-partTwo = solve 9
+partOne = solve 2
+partTwo = solve 10
 
 main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . parse
