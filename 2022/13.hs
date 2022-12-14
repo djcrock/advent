@@ -1,4 +1,3 @@
-import Data.List ( findIndices, sort )
 import Text.Parsec
 
 data Packet = L [Packet] | V Int deriving Eq
@@ -20,9 +19,7 @@ instance Ord Packet where
     compare a@(L _)    b@(V _)    = compare a (L [b])
     compare (L (a:as)) (L (b:bs)) = compare a b <> compare (L as) (L bs)
 
-partOne = sum . map (+1) . findIndices (\xs -> xs == sort xs)
-
-partTwo = product . map (+1) . findIndices (`elem` divs) . sort . concat . (divs:)
-    where divs = [L [L [V 2]], L [L [V 6]]]
+partOne = sum . map fst . filter (\(_,[xs,ys]) -> xs < ys) . zip [1..]
+partTwo = product . map length . (sequence (filter<$>(>=)<$>[V 2,V 6])) . concat . ([V 2,V 6]:)
 
 main = interact $ (++ "\n") . show . sequence [partOne, partTwo] . parseInput
